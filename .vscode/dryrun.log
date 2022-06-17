@@ -1,0 +1,22 @@
+make: Entering directory `/Users/sjlee/cosmos-sdk'
+echo "Installing statik..."
+(cd /tmp && go get github.com/rakyll/statik@v0.1.6)
+ 
+echo "Installing runsim..."
+(cd /tmp && go get github.com/cosmos/tools/cmd/runsim@v1.0.0)
+ 
+# Create dummy file to satisfy dependency and avoid
+# rebuilding when this Makefile target is hit twice
+# in a row.
+touch tools-stamp
+echo "Ensure dependencies have not been modified ..." >&2
+go mod verify
+go mod tidy
+mkdir -p /Users/sjlee/cosmos-sdk/build/
+go build -mod=readonly -tags "netgo ledger" -ldflags '-X github.com/cosmos/cosmos-sdk/version.Name=sim -X github.com/cosmos/cosmos-sdk/version.AppName=simd -X github.com/cosmos/cosmos-sdk/version.Version=83eda77 -X github.com/cosmos/cosmos-sdk/version.Commit=83eda77701af705b2fabd420430012d1e4d9c492 -X "github.com/cosmos/cosmos-sdk/version.BuildTags=netgo,ledger" -X github.com/tendermint/tendermint/version.TMCoreSemVer=v0.34.14 -w -s' -trimpath -o /Users/sjlee/cosmos-sdk/build/ ./...
+echo 
+go run github.com/golangci/golangci-lint/cmd/golangci-lint run --out-format=tab 
+if docker ps -a --format '{{.Names}}' | grep -Eq "^cosmos-sdk-markdownlint$"; then docker start -a cosmos-sdk-markdownlint; else docker run --name cosmos-sdk-markdownlint -i -v "/Users/sjlee/cosmos-sdk:/work" ; fi
+go test -mod=readonly -tags='cgo ledger test_ledger_mock norace'   ./...
+make: Leaving directory `/Users/sjlee/cosmos-sdk'
+ 
